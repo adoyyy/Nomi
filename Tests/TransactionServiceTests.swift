@@ -9,6 +9,7 @@ final class TransactionServiceTests: XCTestCase {
     var service: TransactionService!
     var wallet: Wallet!
     
+    @MainActor
     override func setUpWithError() throws {
         let schema = Schema([Wallet.self, TransactionCategory.self, Transaction.self, Receipt.self])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
@@ -20,6 +21,7 @@ final class TransactionServiceTests: XCTestCase {
         context.insert(wallet)
     }
     
+    @MainActor
     func testCreateExpense() {
         service.createExpense(amount: 100, wallet: wallet, category: nil, merchant: "Test", notes: nil, date: Date())
         
@@ -32,6 +34,7 @@ final class TransactionServiceTests: XCTestCase {
         XCTAssertFalse(transactions!.first!.isDeleted)
     }
     
+    @MainActor
     func testDeleteTransaction() {
         service.createExpense(amount: 100, wallet: wallet, category: nil, merchant: "Test", notes: nil, date: Date())
         
@@ -46,6 +49,7 @@ final class TransactionServiceTests: XCTestCase {
         XCTAssertNotNil(transaction.deletedAt)
     }
     
+    @MainActor
     func testCheckDuplicate() {
         let date = Date()
         service.createExpense(amount: 500, wallet: wallet, category: nil, merchant: "Starbucks", notes: nil, date: date)
