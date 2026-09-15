@@ -1,5 +1,21 @@
-﻿import Foundation
+import Foundation
 import SwiftUI
+
+enum AutoLockTimeout: Int, CaseIterable {
+    case immediately = 0
+    case oneMinute = 60
+    case fiveMinutes = 300
+    case fifteenMinutes = 900
+    
+    var description: String {
+        switch self {
+        case .immediately: return "Immediately"
+        case .oneMinute: return "After 1 minute"
+        case .fiveMinutes: return "After 5 minutes"
+        case .fifteenMinutes: return "After 15 minutes"
+        }
+    }
+}
 
 enum AuthenticationState {
     case locked
