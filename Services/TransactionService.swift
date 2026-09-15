@@ -27,7 +27,7 @@ class TransactionService {
     }
     
     func deleteTransaction(_ transaction: Transaction) {
-        transaction.isDeleted = true
+        transaction.isSoftDeleted = true
         transaction.deletedAt = Date()
         transaction.updatedAt = Date()
         try? modelContext.save()
@@ -36,7 +36,7 @@ class TransactionService {
     func checkDuplicate(merchant: String, amount: Double, date: Date, existingTransactions: [Transaction]) -> Bool {
         let calendar = Calendar.current
         return existingTransactions.contains { t in
-            !t.isDeleted &&
+            !t.isSoftDeleted &&
             t.amount == amount &&
             t.merchant?.lowercased() == merchant.lowercased() &&
             calendar.isDate(t.date, inSameDayAs: date)

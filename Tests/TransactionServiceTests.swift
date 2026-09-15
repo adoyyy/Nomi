@@ -31,7 +31,7 @@ final class TransactionServiceTests: XCTestCase {
         XCTAssertEqual(transactions?.count, 1)
         XCTAssertEqual(transactions?.first?.amount, 100)
         XCTAssertEqual(transactions?.first?.type, .expense)
-        XCTAssertFalse(transactions!.first!.isDeleted)
+        XCTAssertFalse(transactions!.first!.isSoftDeleted)
     }
     
     @MainActor
@@ -45,7 +45,7 @@ final class TransactionServiceTests: XCTestCase {
         let transaction = transactions.first!
         service.deleteTransaction(transaction)
         
-        XCTAssertTrue(transaction.isDeleted)
+        XCTAssertTrue(transaction.isSoftDeleted)
         XCTAssertNotNil(transaction.deletedAt)
     }
     

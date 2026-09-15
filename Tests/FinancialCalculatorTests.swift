@@ -64,7 +64,7 @@ final class FinancialCalculatorTests: XCTestCase {
         
         XCTAssertEqual(calculator.calculateBalance(for: bcaWallet), 4_900_000)
         
-        expense.isDeleted = true
+        expense.isSoftDeleted = true
         
         XCTAssertEqual(calculator.calculateBalance(for: bcaWallet), 5_000_000)
     }

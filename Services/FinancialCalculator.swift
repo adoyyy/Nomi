@@ -9,7 +9,7 @@ class FinancialCalculator {
         var currentBalance = wallet.initialBalance
         
         if let transactions = wallet.transactions {
-            for transaction in transactions where !transaction.isDeleted {
+            for transaction in transactions where !transaction.isSoftDeleted {
                 if transaction.type == .income {
                     currentBalance += transaction.amount
                 } else if transaction.type == .expense {
@@ -21,7 +21,7 @@ class FinancialCalculator {
         }
         
         if let incoming = wallet.incomingTransfers {
-            for transfer in incoming where !transfer.isDeleted && transfer.type == .transfer {
+            for transfer in incoming where !transfer.isSoftDeleted && transfer.type == .transfer {
                 currentBalance += transfer.amount
             }
         }
@@ -67,7 +67,7 @@ class FinancialCalculator {
     }
     
     private func filterTransactions(_ transactions: [Transaction], in dateRange: Range<Date>?) -> [Transaction] {
-        let notDeleted = transactions.filter { !$0.isDeleted }
+        let notDeleted = transactions.filter { !$0.isSoftDeleted }
         if let range = dateRange {
             return notDeleted.filter { range.contains($0.date) }
         }

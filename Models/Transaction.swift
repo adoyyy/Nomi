@@ -38,7 +38,7 @@ final class Transaction {
     var source: TransactionSource
     var createdAt: Date
     var updatedAt: Date
-    var isDeleted: Bool = false
+    var isSoftDeleted: Bool = false
     var deletedAt: Date?
     
     init(id: UUID = UUID(), type: TransactionType, amount: Double, currency: String = "IDR", category: TransactionCategory? = nil, wallet: Wallet? = nil, destinationWallet: Wallet? = nil, merchant: String? = nil, notes: String? = nil, date: Date = Date(), receipt: Receipt? = nil, source: TransactionSource = .manual, createdAt: Date = Date(), updatedAt: Date = Date()) {
