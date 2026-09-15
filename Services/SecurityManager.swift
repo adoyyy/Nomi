@@ -1,25 +1,16 @@
-import Foundation
-import LocalAuthentication
+﻿import Foundation
 import SwiftUI
 
-enum AutoLockTimeout: Int, CaseIterable {
-    case immediately = 0
-    case oneMinute = 60
-    case fiveMinutes = 300
-    case fifteenMinutes = 900
-    
-    var description: String {
-        switch self {
-        case .immediately: return "Immediately"
-        case .oneMinute: return "After 1 minute"
-        case .fiveMinutes: return "After 5 minutes"
-        case .fifteenMinutes: return "After 15 minutes"
-        }
-    }
+enum AuthenticationState {
+    case locked
+    case authenticating
+    case authenticated
+    case failed
+    case unavailable
 }
 
 class SecurityManager: ObservableObject {
-    @Published var isAuthenticated = false
+    @Published var authState: AuthenticationState = .locked
     @Published var isPrivacyMode = false
     @Published var isBlurAppScreen = false
     
@@ -30,29 +21,41 @@ class SecurityManager: ObservableObject {
     }
     
     private var lastInactiveTime: Date?
+    private let authService: BiometricAuthenticationService
+    
+    init(authService: BiometricAuthenticationService = DefaultBiometricAuthenticationService()) {
+        self.authService = authService
+    }
+    
+    var isAuthenticated: Bool {
+        return authState == .authenticated
+    }
     
     func authenticate() {
-        let context = LAContext()
-        var error: NSError?
+        guard authState != .authenticating else { return }
         
-        if context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) {
+        if authService.canEvaluatePolicy() {
+            DispatchQueue.main.async {
+                self.authState = .authenticating
+            }
+            
             let reason = "Unlock Nomi to view your financial data."
             
-            context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, authenticationError in
+            authService.authenticate(reason: reason) { success, error in
                 DispatchQueue.main.async {
                     if success {
-                        self.isAuthenticated = true
+                        self.authState = .authenticated
                         self.isBlurAppScreen = false
                     } else {
-                        print(authenticationError?.localizedDescription ?? "Authentication failed")
-                        self.isAuthenticated = false
-                        self.isBlurAppScreen = true
+                        print(error?.localizedDescription ?? "Authentication failed")
+                        self.authState = .failed
                     }
                 }
             }
         } else {
-            self.isAuthenticated = true
-            self.isBlurAppScreen = false
+            DispatchQueue.main.async {
+                self.authState = .unavailable
+            }
         }
     }
     
@@ -62,8 +65,7 @@ class SecurityManager: ObservableObject {
     }
     
     func handleAppForegrounding() {
-        if !isAuthenticated {
-            authenticate()
+        guard authState == .authenticated else {
             return
         }
         
@@ -74,8 +76,7 @@ class SecurityManager: ObservableObject {
         
         let elapsed = Date().timeIntervalSince(lastTime)
         if elapsed >= Double(autoLockTimeout.rawValue) {
-            self.isAuthenticated = false
-            authenticate()
+            self.authState = .locked
         } else {
             self.isBlurAppScreen = false
         }

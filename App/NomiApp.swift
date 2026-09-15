@@ -45,23 +45,7 @@ struct NomiApp: App {
                 .environment(\.modelContext, sharedModelContainer.mainContext)
                 .blur(radius: securityManager.isBlurAppScreen ? 15 : 0)
             } else {
-                VStack(spacing: 20) {
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 80))
-                        .foregroundColor(.blue)
-                        .padding()
-                    Text("Nomi is locked")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                    Button("Unlock Nomi") {
-                        securityManager.authenticate()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .padding()
-                }
-                .onAppear {
-                    securityManager.authenticate()
-                }
+                LockView(securityManager: securityManager)
             }
         }
         .modelContainer(sharedModelContainer)
@@ -70,6 +54,52 @@ struct NomiApp: App {
                 securityManager.handleAppBackgrounding()
             } else if newPhase == .active {
                 securityManager.handleAppForegrounding()
+            }
+        }
+    }
+}
+
+struct LockView: View {
+    @ObservedObject var securityManager: SecurityManager
+    @State private var hasAttemptedInitialAuth = false
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 80))
+                .foregroundColor(.blue)
+                .padding()
+            
+            Text("Nomi is locked")
+                .font(.title2)
+                .fontWeight(.semibold)
+                
+            if securityManager.authState == .failed {
+                Text("Face ID couldn't verify you.")
+                    .foregroundColor(.red)
+                    .font(.subheadline)
+            } else if securityManager.authState == .unavailable {
+                Text("Face ID is temporarily unavailable.\nUse your device passcode or retry later.")
+                    .foregroundColor(.red)
+                    .font(.subheadline)
+                    .multilineTextAlignment(.center)
+            }
+            
+            if securityManager.authState == .authenticating {
+                ProgressView()
+                    .padding()
+            } else {
+                Button("Unlock Nomi") {
+                    securityManager.authenticate()
+                }
+                .buttonStyle(.borderedProminent)
+                .padding()
+            }
+        }
+        .onAppear {
+            if !hasAttemptedInitialAuth && securityManager.authState == .locked {
+                hasAttemptedInitialAuth = true
+                securityManager.authenticate()
             }
         }
     }
