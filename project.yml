@@ -32,3 +32,5 @@ targets:
       - path: Tests
     dependencies:
       - target: Nomi
+    settings:
+      GENERATE_INFOPLIST_FILE: YES
