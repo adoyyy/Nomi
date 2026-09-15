@@ -21,25 +21,96 @@ jobs:
       - name: Generate Xcode Project
         run: xcodegen generate
 
-      - name: Build Unsigned App
+      - name: Run Tests
         run: |
+          set -euo pipefail
+          xcodebuild clean test \
+            -project Nomi.xcodeproj \
+            -scheme Nomi \
+            -destination 'platform=iOS Simulator,name=iPhone Air'
+
+      - name: Build Unsigned Device App
+        run: |
+          set -euo pipefail
           xcodebuild clean build \
             -project Nomi.xcodeproj \
             -scheme Nomi \
             -configuration Release \
             -sdk iphoneos \
-            -derivedDataPath derivedData \
+            -derivedDataPath build \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
 
-      - name: Package into IPA
+      - name: Package IPA
         run: |
+          set -euo pipefail
+          if [ ! -d "build/Build/Products/Release-iphoneos/Nomi.app" ]; then
+            echo "Error: Build completed but Nomi.app was not produced"
+            exit 1
+          fi
+          
           mkdir -p Payload
-          cp -r derivedData/Build/Products/Release-iphoneos/Nomi.app Payload/
-          zip -r Nomi-unsigned.ipa Payload
+          cp -R build/Build/Products/Release-iphoneos/Nomi.app Payload/
+          zip -qr Nomi-unsigned.ipa Payload
+          
+          if [ ! -f "Nomi-unsigned.ipa" ]; then
+            echo "Error: IPA packaging failed"
+            exit 1
+          fi
 
-      - name: Upload IPA Artifact
+      - name: Validate IPA
+        run: |
+          set -euo pipefail
+          echo "Validating IPA structure..."
+          
+          # Check IPA exists and is non-zero
+          if [ ! -s "Nomi-unsigned.ipa" ]; then
+            echo "Error: Generated IPA failed structural validation (empty or missing)"
+            exit 1
+          fi
+          
+          # Check ZIP contents
+          unzip -l Nomi-unsigned.ipa > ipa_contents.txt
+          
+          if ! grep -q "Payload/Nomi.app/" ipa_contents.txt; then
+            echo "Error: Payload/Nomi.app/ not found in IPA"
+            exit 1
+          fi
+          
+          if ! grep -q "Payload/Nomi.app/Info.plist" ipa_contents.txt; then
+            echo "Error: Info.plist not found in IPA"
+            exit 1
+          fi
+          
+          if ! grep -q "Payload/Nomi.app/Nomi" ipa_contents.txt; then
+            echo "Error: Executable not found in IPA"
+            exit 1
+          fi
+          
+          if grep -q "\.dSYM" ipa_contents.txt; then
+            echo "Error: .dSYM accidentally included inside the IPA"
+            exit 1
+          fi
+
+          echo "Extracting app metadata..."
+          APP_PATH="Payload/Nomi.app"
+          
+          BUNDLE_ID=$(plutil -extract CFBundleIdentifier raw "$APP_PATH/Info.plist" || true)
+          VERSION=$(plutil -extract CFBundleShortVersionString raw "$APP_PATH/Info.plist" || echo "Unknown")
+          BUILD=$(plutil -extract CFBundleVersion raw "$APP_PATH/Info.plist" || echo "Unknown")
+          
+          if [ -z "$BUNDLE_ID" ] || [ "$BUNDLE_ID" = "com.adoyyy.nomi" ]; then
+             BUNDLE_ID="com.adoyyy.nomi"
+          fi
+          
+          echo "Nomi version: $VERSION"
+          echo "Build number: $BUILD"
+          echo "Bundle identifier: $BUNDLE_ID"
+          
+          echo "Validation PASSED."
+
+      - name: Upload Nomi IPA Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Nomi-unsigned

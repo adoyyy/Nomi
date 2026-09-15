@@ -56,3 +56,14 @@ The app includes a suite of unit tests focusing on the core financial engine:
 
 ---
 *Built with ❤️ for a smarter financial life.*
+## Build Unsigned IPA
+
+The repository provides a GitHub Actions workflow that:
+1. Runs tests
+2. Builds an unsigned physical-device iOS app
+3. Packages it as Nomi-unsigned.ipa
+4. Uploads it as a GitHub Actions artifact
+
+This workflow does not use App Store Connect or TestFlight.
+
+**Note:** The unsigned IPA cannot be installed directly on an iPhone. It must be signed using an appropriate device-development signing workflow (e.g., using 3uTools with a free Apple ID) before installation.
