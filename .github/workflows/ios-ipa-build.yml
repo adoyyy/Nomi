@@ -1,0 +1,47 @@
+﻿name: Build Unsigned IPA
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build_ipa:
+    name: Build Unsigned IPA for 3uTools
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Install XcodeGen
+        run: brew install xcodegen
+        
+      - name: Generate Xcode Project
+        run: xcodegen generate
+
+      - name: Build Unsigned App
+        run: |
+          xcodebuild clean build \
+            -project Nomi.xcodeproj \
+            -scheme Nomi \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath derivedData \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Package into IPA
+        run: |
+          mkdir -p Payload
+          cp -r derivedData/Build/Products/Release-iphoneos/Nomi.app Payload/
+          zip -r Nomi-unsigned.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nomi-unsigned
+          path: Nomi-unsigned.ipa
+          retention-days: 7
