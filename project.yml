@@ -13,6 +13,9 @@ targets:
       - path: Models
       - path: Views
       - path: Services
+      - path: Utilities
+      - path: ViewModels
+      - path: Repositories
     settings:
       GENERATE_INFOPLIST_FILE: YES
       INFOPLIST_KEY_NSCameraUsageDescription: "Nomi needs camera access to scan your receipts."
